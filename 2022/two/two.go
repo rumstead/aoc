@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bufio"
+	_ "embed"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 )
 
@@ -18,18 +17,12 @@ const (
 	Win  string = "Z"
 )
 
+//go:embed input.txt
+var input string
+
 func main() {
-	file, err := os.Open("./input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
 	total := 0
-	for scanner.Scan() {
-		line := scanner.Text()
+	for _, line := range strings.Split(input, "\n") {
 		words := strings.Fields(line)
 		if len(words) != 2 {
 			log.Fatalf("%s is invalid!\n", line)
@@ -40,10 +33,6 @@ func main() {
 		// part two
 		me := getExpectedAction(op, words[1])
 		total += getPoints(op, me)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
 	}
 
 	fmt.Println(total)

@@ -1,27 +1,21 @@
 package main
 
 import (
-	"bufio"
+	_ "embed"
 	"fmt"
 	"log"
-	"os"
 	"sort"
 	"strconv"
+	"strings"
 )
 
+//go:embed input.txt
+var input string
+
 func main() {
-	file, err := os.Open("./input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
 	var elves []int
 	total := 0
-	for scanner.Scan() {
-		line := scanner.Text()
+	for _, line := range strings.Split(input, "\n") {
 		if line != "" {
 			calorie, err := strconv.Atoi(line)
 			if err != nil {
@@ -33,10 +27,6 @@ func main() {
 			elves = append(elves, total)
 			total = 0
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
 	}
 
 	sort.Ints(elves)
