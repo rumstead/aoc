@@ -9,13 +9,66 @@ import (
 	"github.com/rumstead/aoc/2023/utils"
 )
 
-//go:embed input-test.txt
+//go:embed input.txt
 var input string
 
+// Not proud of this one but got a little bored with it and just wanted to get it done
 func main() {
 	nums, specialPoints := parseGrid(input)
-	//fmt.Println(grid)
-	engineNums := findEngine(nums, specialPoints)
+	//partOne(nums, specialPoints)
+	partTwo(nums, specialPoints)
+}
+
+func partTwo(nums []map[int][]utils.Point[string], points map[string]utils.Point[string]) {
+	var gears = map[string]utils.Point[string]{}
+	for _, sp := range points {
+		if sp.Value == "*" {
+			gears[getSpecialPointKey(sp)] = sp
+		}
+	}
+
+	var strPoints = map[string]utils.Point[string]{}
+	var pointsToNum = map[string]int{}
+	for _, numToPoints := range nums {
+		for num, p := range numToPoints {
+			for _, point := range p {
+				strPoints[getSpecialPointKey(point)] = point
+				pointsToNum[getSpecialPointKey(point)] = num
+			}
+		}
+	}
+	total := 0
+	for _, g := range gears {
+		cp := adjacentPoints(g, strPoints, getSpecialPointKey)
+		if len(cp) >= 2 {
+			var numSet []int
+			testPoint := utils.Point[string]{
+				Y: -1,
+				X: -1,
+			}
+			for i, p := range cp {
+				if num, ok := pointsToNum[getSpecialPointKey(p)]; ok {
+					if testPoint.Y != p.Y {
+						numSet = append(numSet, num)
+					} else if testPoint.X != p.X-1 {
+						numSet = append(numSet, num)
+					}
+					testPoint = cp[i]
+				}
+			}
+			if len(numSet) != 2 && len(numSet) > 0 {
+				fmt.Printf("%v: numSet not 2 %v\n", g, numSet)
+			} else {
+				fmt.Printf("%v: numSet 2 %v\n", g, numSet)
+				total += numSet[0] * numSet[1]
+			}
+		}
+	}
+	fmt.Println(total)
+}
+
+func partOne(nums []map[int][]utils.Point[string], points map[string]utils.Point[string]) {
+	engineNums := findEngine(nums, points)
 	total := 0
 	for _, num := range engineNums {
 		total += num
@@ -69,7 +122,7 @@ func findEngine(nums []map[int][]utils.Point[string], specialPoints map[string]u
 	var engineNums []int
 	for _, numToPoints := range nums {
 		for num, points := range numToPoints {
-			if isAdjacent(points, specialPoints) {
+			if isEngineAdjacent(points, specialPoints, getSpecialPointKey) {
 				engineNums = append(engineNums, num)
 			}
 		}
@@ -77,46 +130,73 @@ func findEngine(nums []map[int][]utils.Point[string], specialPoints map[string]u
 	return engineNums
 }
 
-func isAdjacent(points []utils.Point[string], searchPoints map[string]utils.Point[string]) bool {
+func isEngineAdjacent(points []utils.Point[string], searchPoints map[string]utils.Point[string], key func(p utils.Point[string]) string) bool {
 	for _, p := range points {
-		// test top left
-		if pointExists(p.X-1, p.Y+1, searchPoints) {
-			return true
-		}
-		// test top
-		if pointExists(p.X, p.Y+1, searchPoints) {
-			return true
-		}
-		// test top right
-		if pointExists(p.X+1, p.Y+1, searchPoints) {
-			return true
-		}
-		// test left
-		if pointExists(p.X-1, p.Y, searchPoints) {
-			return true
-		}
-		// test right
-		if pointExists(p.X+1, p.Y, searchPoints) {
-			return true
-		}
-		// test bottom left
-		if pointExists(p.X-1, p.Y-1, searchPoints) {
-			return true
-		}
-		// test bottom
-		if pointExists(p.X, p.Y-1, searchPoints) {
-			return true
-		}
-		// test bottom right
-		if pointExists(p.X+1, p.Y-1, searchPoints) {
+		if len(adjacentPoints(p, searchPoints, key)) > 0 {
 			return true
 		}
 	}
 	return false
 }
 
-func pointExists(x, y int, points map[string]utils.Point[string]) bool {
-	testPoint := utils.Point[string]{X: x, Y: y}
-	_, ok := points[getSpecialPointKey(testPoint)]
+func adjacentPoints(p utils.Point[string], searchPoints map[string]utils.Point[string], key func(p utils.Point[string]) string) []utils.Point[string] {
+	var points []utils.Point[string]
+	// test top left
+	testPoint := p
+	testPoint.X--
+	testPoint.Y++
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test top
+	testPoint = p
+	testPoint.Y++
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test top right
+	testPoint = p
+	testPoint.X++
+	testPoint.Y++
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test left
+	testPoint = p
+	testPoint.X--
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test right
+	testPoint = p
+	testPoint.X++
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test bottom left
+	testPoint = p
+	testPoint.X--
+	testPoint.Y--
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test bottom
+	testPoint = p
+	testPoint.Y--
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	// test bottom right
+	testPoint = p
+	testPoint.X++
+	testPoint.Y--
+	if pointExists(testPoint, searchPoints, key) {
+		points = append(points, testPoint)
+	}
+	return points
+}
+
+func pointExists(p utils.Point[string], points map[string]utils.Point[string], key func(p utils.Point[string]) string) bool {
+	_, ok := points[key(p)]
 	return ok
 }
